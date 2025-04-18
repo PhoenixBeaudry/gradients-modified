@@ -140,31 +140,23 @@ async def task_offer(
         global current_job_finish_time
         current_time = datetime.now()
 
-        # # 1) Only accept supported model families on our A100
-        # allowed_models = ["llama", "gpt", "opt", "pythia", "qwen", "codellama"]
-        # if not any(m in request.model.lower() for m in allowed_models):
-        #     logger.info(f"Rejecting offer: Not Allowed Model: {request.model.lower()}")
-        #     return MinerTaskResponse(
-        #         message=f"Model {request.model} not supported",
-        #         accepted=False
-        #     )
+        # instead of a single finish time, check how many jobs are _actually_ running
+        running = worker_config.trainer.active_job_count()
+        capacity = 5
 
-        # 2) Ensure we’re not still busy, or close to finishing
-        if current_job_finish_time is None or current_time + timedelta(hours=1) > current_job_finish_time:
-            # 3) Accept any job up to 24 h of work
-            if request.hours_to_complete < 24:
-                logger.info(f"Accepting offer: {request.model} ({request.hours_to_complete}h)")
-                return MinerTaskResponse(message="Yes", accepted=True)
-            else:
-                logger.info(f"Rejecting offer: job too long ({request.hours_to_complete}h)")
-                return MinerTaskResponse(message="Job too long", accepted=False)
-        else:
-            # Still busy
-            logger.info(f"Busy Error 1")
-            return MinerTaskResponse(
-                message=f"Currently busy until {current_job_finish_time.isoformat()}",
-                accepted=False
-            )
+        if running >= capacity:
+            msg = f"Busy: {running}/{capacity} jobs in flight"
+            logger.info(msg)
+            return MinerTaskResponse(message=msg, accepted=False)
+
+        # optional: still reject absurdly long jobs if you want
+        if request.hours_to_complete >= 48:
+            logger.info(f"Rejecting offer: too long ({request.hours_to_complete}h)")
+            return MinerTaskResponse(message="Job too long", accepted=False)
+
+        # otherwise accept
+        logger.info(f"Accepting offer ({running+1}/{capacity}): {request.model} ({request.hours_to_complete}h)")
+        return MinerTaskResponse(message="Yes", accepted=True)
 
     except ValidationError as e:
         logger.error(f"Validation error in task_offer: {str(e)}")
