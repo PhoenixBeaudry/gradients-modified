@@ -30,9 +30,13 @@ RUN mkdir -p \
       /workspace/input_data
 
 # Copy accelerate & deepspeed configs
-COPY ../accelerate_config.yaml /workspace/axolotl/configs/accelerate_config.yaml
-COPY ../deepspeed_stage2.json /workspace/axolotl/configs/deepspeed_stage2.json
+COPY ./accelerate_config.yaml /workspace/axolotl/configs/accelerate_config.yaml
+COPY ./deepspeed_stage2.json /workspace/axolotl/configs/deepspeed_stage2.json
 
+RUN ls -l /workspace/axolotl/configs/accelerate_config.yaml
+# DEBUG: verify the file is here
+RUN echo "===== DEBUG: listing configs dir =====" && \
+    ls -la /workspace/axolotl/configs
 # Set the ENV so entrypoint uses it by default
 ENV ACCELERATE_CONFIG_FILE="/workspace/axolotl/configs/accelerate_config.yaml"
 
