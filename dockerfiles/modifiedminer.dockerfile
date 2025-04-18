@@ -30,8 +30,8 @@ RUN mkdir -p \
       /workspace/input_data
 
 # Copy accelerate & deepspeed configs
-COPY accelerate_config.yaml /workspace/axolotl/configs/accelerate_config.yaml
-COPY deepspeed_stage2.json /workspace/axolotl/configs/deepspeed_stage2.json
+COPY ../accelerate_config.yaml /workspace/axolotl/configs/accelerate_config.yaml
+COPY ../deepspeed_stage2.json /workspace/axolotl/configs/deepspeed_stage2.json
 
 # Set the ENV so entrypoint uses it by default
 ENV ACCELERATE_CONFIG_FILE="/workspace/axolotl/configs/accelerate_config.yaml"
@@ -40,10 +40,10 @@ ENV ACCELERATE_CONFIG_FILE="/workspace/axolotl/configs/accelerate_config.yaml"
 ENV CONFIG_DIR="/workspace/axolotl/configs" \
     OUTPUT_DIR="/workspace/axolotl/outputs" \
     DATA_DIR="/workspace/axolotl/data" \
-    AWS_ENDPOINT_URL="https://…r2.cloudflarestorage.com" \
-    AWS_ACCESS_KEY_ID=dummy \
+    AWS_ENDPOINT_URL="https://5a301a635a9d0ac3cb7fcc3bf373c3c3.r2.cloudflarestorage.com" \
+    AWS_ACCESS_KEY_ID=d49fdd0cc9750a097b58ba35b2d9fbed \
     AWS_DEFAULT_REGION="us-east-1" \
-    AWS_SECRET_ACCESS_KEY=dummy \
+    AWS_SECRET_ACCESS_KEY=02e398474b783af6ded4c4638b5388ceb8079c83bb2f8233d5bcef0e60addba6 \
     OMP_NUM_THREADS=16 \
     MKL_NUM_THREADS=16
 

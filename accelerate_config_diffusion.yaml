@@ -1,0 +1,8 @@
+# accelerate_config.yaml
+
+compute_environment: LOCAL_MACHINE
+distributed_type: MULTI_GPU
+mixed_precision: fp16
+num_processes: 8
+deepspeed_config: "./deepspeed_diffusion.json"
+

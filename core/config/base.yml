@@ -1,3 +1,5 @@
+# core/config/base.yml
+
 base_model: NousResearch/Meta-Llama-3-8B-Instruct
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
@@ -25,23 +27,28 @@ lora_dropout: 0.05
 lora_target_linear: true
 lora_fan_in_fan_out:
 
-gradient_accumulation_steps: 4
+gradient_accumulation_steps: 8    # effective batch size = micro_batch_size × accum_steps
 micro_batch_size: 2
-num_epochs: 1
+num_epochs: 3                     # multiple passes over the data
 optimizer: adamw_bnb_8bit
 lr_scheduler: cosine
-learning_rate: 0.0002
+learning_rate: 2e-4               # start LR for LoRA on 8B models
 
 train_on_inputs: false
 group_by_length: false
-bf16: auto
-fp16:
+
+bf16: true      # use BF16 on A100s
+fp16: false
 tf32: false
 
-gradient_checkpointing: false
-early_stopping_patience:
-resume_from_checkpoint:
-local_rank:
+gradient_checkpointing: true       # activation checkpointing to save memory
+
+# Automatic checkpointing
+save_strategy: "steps"
+save_steps: 500
+save_total_limit: 3
+resume_from_checkpoint: ""         # filled in when resuming a preempted job
+
 logging_steps: 1
 xformers_attention:
 flash_attention: true
@@ -58,15 +65,17 @@ hub_repo:
 hub_strategy: checkpoint
 hub_token:
 
+# Training schedule
+warmup_steps: 200
+weight_decay: 0.01
+max_steps: 4000
 
-saves_per_epoch: 4
-warmup_steps: 10
 evals_per_epoch: 4
 eval_table_size:
 eval_max_new_tokens: 128
-max_steps: 10
+
 debug:
+
 deepspeed:
-weight_decay: 0.0
 fsdp:
 fsdp_config:
