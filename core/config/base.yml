@@ -77,7 +77,6 @@ hub_repo:
 hub_strategy: checkpoint
 hub_token:
 
-evals_per_epoch: 4
 eval_table_size:
 eval_max_new_tokens: 128
 
