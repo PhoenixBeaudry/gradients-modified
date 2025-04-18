@@ -137,8 +137,6 @@ async def task_offer(
     try:
         logger.info("An offer has come through")
         logger.info(f"Model: {request.model.lower()}, Time: {request.hours_to_complete}")
-        global current_job_finish_time
-        current_time = datetime.now()
 
         # instead of a single finish time, check how many jobs are _actually_ running
         running = worker_config.trainer.active_job_count()
