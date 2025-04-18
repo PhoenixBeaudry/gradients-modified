@@ -136,35 +136,40 @@ async def task_offer(
 ) -> MinerTaskResponse:
     try:
         logger.info("An offer has come through")
-        # You will want to optimise this as a miner
+        logger.info(f"Model: {request.model.lower()}, Time: {request.hours_to_complete}")
         global current_job_finish_time
         current_time = datetime.now()
-        if request.task_type not in [TaskType.INSTRUCTTEXTTASK, TaskType.DPOTASK]:
+
+        # # 1) Only accept supported model families on our A100
+        # allowed_models = ["llama", "gpt", "opt", "pythia", "qwen", "codellama"]
+        # if not any(m in request.model.lower() for m in allowed_models):
+        #     logger.info(f"Rejecting offer: Not Allowed Model: {request.model.lower()}")
+        #     return MinerTaskResponse(
+        #         message=f"Model {request.model} not supported",
+        #         accepted=False
+        #     )
+
+        # 2) Ensure we’re not still busy, or close to finishing
+        if current_job_finish_time is None or current_time + timedelta(hours=1) > current_job_finish_time:
+            # 3) Accept any job up to 24 h of work
+            if request.hours_to_complete < 24:
+                logger.info(f"Accepting offer: {request.model} ({request.hours_to_complete}h)")
+                return MinerTaskResponse(message="Yes", accepted=True)
+            else:
+                logger.info(f"Rejecting offer: job too long ({request.hours_to_complete}h)")
+                return MinerTaskResponse(message="Job too long", accepted=False)
+        else:
+            # Still busy
+            logger.info(f"Busy Error 1")
             return MinerTaskResponse(
-                message=f"This endpoint only accepts text tasks: "
-                        f"{TaskType.INSTRUCTTEXTTASK} and {TaskType.DPOTASK}",
+                message=f"Currently busy until {current_job_finish_time.isoformat()}",
                 accepted=False
             )
 
-        if "llama" not in request.model.lower():
-            return MinerTaskResponse(message="I'm not yet optimised and only accept llama-type jobs", accepted=False)
-
-        if current_job_finish_time is None or current_time + timedelta(hours=1) > current_job_finish_time:
-            if request.hours_to_complete < 13:
-                logger.info("Accepting the offer - ty snr")
-                return MinerTaskResponse(message=f"Yes. I can do {request.task_type} jobs", accepted=True)
-            else:
-                logger.info("Rejecting offer")
-                return MinerTaskResponse(message="I only accept small jobs", accepted=False)
-        else:
-            return MinerTaskResponse(
-                message=f"Currently busy with another job until {current_job_finish_time.isoformat()}",
-                accepted=False,
-            )
-
     except ValidationError as e:
-        logger.error(f"Validation error: {str(e)}")
+        logger.error(f"Validation error in task_offer: {str(e)}")
         raise HTTPException(status_code=422, detail=str(e))
+
     except Exception as e:
         logger.error(f"Unexpected error in task_offer: {str(e)}")
         logger.error(f"Error type: {type(e)}")

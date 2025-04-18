@@ -339,6 +339,11 @@ def start_tuning_container(job: TextJob):
                 "mode": "rw",
             },
         }
+        volume_bindings[ os.path.expanduser("~/.cache/huggingface") ] = {
+            "bind": "/root/.cache/huggingface",
+            "mode": "ro"
+        }
+
 
         if job.file_format != FileFormat.HF:
             dataset_dir = os.path.dirname(os.path.abspath(job.dataset))
@@ -358,7 +363,8 @@ def start_tuning_container(job: TextJob):
             environment=docker_env,
             volumes=volume_bindings,
             runtime="nvidia",
-            device_requests=[docker.types.DeviceRequest(count=1, capabilities=[["gpu"]])],
+            shm_size="32g",
+            device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])],
             detach=True,
             tty=True,
         )

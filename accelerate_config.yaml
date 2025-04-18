@@ -1,0 +1,16 @@
+# accelerate_config.yaml
+
+compute_environment: LOCAL_MACHINE    # running on one host
+distributed_type: MULTI_GPU           # launch one process per GPU
+mixed_precision: fp16                 # use FP16 for speed & memory
+num_processes: 8                      # match your 8 A100s
+num_machines: 1
+machine_rank: 0
+
+# if you want to use DeepSpeed ZeRO stage‑2:
+deepspeed_config: "./deepspeed_stage2.json"
+
+# optional tuning
+main_process_ip: null
+main_process_port: null
+use_cpu: false
