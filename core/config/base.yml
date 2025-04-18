@@ -14,11 +14,6 @@ dataset_prepared_path:
 val_set_size: 0.05
 output_dir: miner_id_24
 
-sequence_len: 512
-sample_packing: false
-pad_to_sequence_len: true
-trust_remote_code: true
-
 adapter: lora
 lora_model_dir:
 lora_r: 8
@@ -27,29 +22,46 @@ lora_dropout: 0.05
 lora_target_linear: true
 lora_fan_in_fan_out:
 
-gradient_accumulation_steps: 8    # effective batch size = micro_batch_size × accum_steps
+sequence_len: 2048
+sample_packing: true
+pad_to_sequence_len: false
+group_by_length: true
+
+gradient_accumulation_steps: 8
 micro_batch_size: 2
-num_epochs: 3                     # multiple passes over the data
-optimizer: adamw_bnb_8bit
-lr_scheduler: cosine
-learning_rate: 2e-4               # start LR for LoRA on 8B models
+num_epochs: 3
+optimizer: lion
+beta1: 0.9
+beta2: 0.999
+eps: 1e-8
+gradient_clip_val: 1.0
 
-train_on_inputs: false
-group_by_length: false
+lr_scheduler: onecycle
+warmup_ratio: 0.03
+pct_start: 0.1
+learning_rate: 2e-4
+max_steps: 4000
 
-bf16: true      # use BF16 on A100s
+bf16: true
 fp16: false
-tf32: false
+tf32: true
+gradient_checkpointing: true
 
-gradient_checkpointing: true       # activation checkpointing to save memory
-
-# Automatic checkpointing
+evaluation_strategy: "steps"
+eval_steps: 500
 save_strategy: "steps"
 save_steps: 500
 save_total_limit: 3
-resume_from_checkpoint: ""         # filled in when resuming a preempted job
+load_best_model_at_end: true
+metric_for_best_model: "eval_loss"
+greater_is_better: false
+early_stopping_patience: 3
 
 logging_steps: 1
+
+# optional: in your training script, wrap your model
+# model = torch.compile(model)
+
 xformers_attention:
 flash_attention: true
 s2_attention:
@@ -64,11 +76,6 @@ hub_model_id:
 hub_repo:
 hub_strategy: checkpoint
 hub_token:
-
-# Training schedule
-warmup_steps: 200
-weight_decay: 0.01
-max_steps: 4000
 
 evals_per_epoch: 4
 eval_table_size:
