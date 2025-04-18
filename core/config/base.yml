@@ -22,7 +22,7 @@ lora_dropout: 0.05
 lora_target_linear: true
 lora_fan_in_fan_out:
 
-sequence_len: 2048
+sequence_len: 512
 sample_packing: true
 pad_to_sequence_len: false
 group_by_length: true
