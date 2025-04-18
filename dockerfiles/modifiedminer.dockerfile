@@ -20,7 +20,8 @@ RUN pip install --no-cache-dir \
       optimum \
       flash-attn \
       unsloth \
-      trl
+      trl \
+      protobuf
 
 # 4. Prepare working directories
 WORKDIR /workspace/axolotl
