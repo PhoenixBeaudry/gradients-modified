@@ -138,6 +138,13 @@ async def task_offer(
         logger.info("An offer has come through")
         logger.info(f"Model: {request.model.lower()}, Time: {request.hours_to_complete}")
 
+        if request.task_type not in [TaskType.INSTRUCTTEXTTASK, TaskType.DPOTASK]:
+            return MinerTaskResponse(
+                message=f"This endpoint only accepts text tasks: "
+                        f"{TaskType.INSTRUCTTEXTTASK} and {TaskType.DPOTASK}",
+                accepted=False
+            )
+
         # instead of a single finish time, check how many jobs are _actually_ running
         running = worker_config.trainer.active_job_count()
         capacity = 5
