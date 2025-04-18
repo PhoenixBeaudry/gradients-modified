@@ -22,5 +22,5 @@ class WorkerConfig:
 @lru_cache
 def factory_worker_config() -> WorkerConfig:
     return WorkerConfig(
-        trainer=TrainingWorker(max_workers=5),
+        trainer=TrainingWorker(max_workers=1),
     )

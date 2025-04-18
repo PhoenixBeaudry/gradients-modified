@@ -147,12 +147,11 @@ async def task_offer(
 
         # instead of a single finish time, check how many jobs are _actually_ running
         running = worker_config.trainer.active_job_count()
-        capacity = 5
+        capacity = 1
 
-        if running >= capacity:
-            msg = f"Busy: {running}/{capacity} jobs in flight"
-            logger.info(msg)
-            return MinerTaskResponse(message=msg, accepted=False)
+        if running >= capacity + 4:
+            return MinerTaskResponse(message=f"Queue full ({running})", accepted=False)
+
 
         # optional: still reject absurdly long jobs if you want
         if request.hours_to_complete >= 48:
