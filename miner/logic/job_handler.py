@@ -375,6 +375,8 @@ def start_tuning_container(job: TextJob):
             image=cst.MINER_DOCKER_IMAGE,
             environment=docker_env,
             volumes=volume_bindings,
+            ipc_mode="host",
+            ulimits=[docker.types.Ulimit(name='memlock', hard=-1), docker.types.Ulimit(name='stack', soft=67108864, hard=67108864)],
             runtime="nvidia",
             shm_size="32g",
             device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])],
