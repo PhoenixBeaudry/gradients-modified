@@ -1,4 +1,4 @@
-FROM diagonalge/kohya_latest:latest
+FROM --platform=linux/amd64 diagonalge/kohya_latest:latest
 
 RUN mkdir -p /dataset/configs \
     /dataset/outputs \

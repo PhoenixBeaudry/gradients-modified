@@ -1,68 +1,65 @@
-# Use your Kohya base image (Python, PyTorch, sd-scripts, etc.)
-FROM --platform=linux/amd64 diagonalge/kohya_latest:latest
+# — 1) Base image
+FROM diagonalge/kohya_latest:latest
 
+# — 2) Switch to root to install system deps
 USER root
-
-# 1. Install system tools needed for the CUDA runfile and builds
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      wget ca-certificates build-essential libomp-dev cmake git \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      git \
+      build-essential \
+      libomp-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install the CUDA Toolkit (including nvcc) via NVIDIA runfile
-ENV CUDA_VERSION=12.8.1
-ENV CUDA_RUNFILE=cuda_${CUDA_VERSION}.0_570.124.06_linux.run
-RUN wget -O /tmp/$CUDA_RUNFILE https://developer.download.nvidia.com/compute/cuda/12.8.1/local_installers/cuda_12.8.1_570.124.06_linux.run && \
-    sh /tmp/$CUDA_RUNFILE --silent --toolkit
+# — 3) Create & activate a dedicated venv
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# 3. Set CUDA environment
-ENV CUDA_HOME=/usr/local/cuda
-ENV PATH=${CUDA_HOME}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+# — 4) Upgrade pip/build‑tools & install Cython
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel cython
 
-# 4. Prepare training directories
-RUN mkdir -p /dataset/configs /dataset/outputs /dataset/images /dataset/latents && \
-    chmod -R 777 /dataset
 
-# 5. Copy in your Accelerate & DeepSpeed config files
-COPY accelerate_config.yaml  /workspace/accelerate_config.yaml
-COPY deepspeed_diffusion.json /workspace/deepspeed_diffusion.json
-
-# 6. Install ML Python packages
+# — 6) Install optimized backends
 RUN pip install --no-cache-dir \
       xformers \
-      flash_attn \
-      diffusers[torch] \
-      accelerate \
-      deepspeed \
-      transformers \
-      peft
+      bitsandbytes
 
-# 7. Set up environment variables for your training entrypoint
-ENV CONFIG_DIR="/dataset/configs"
-ENV OUTPUT_DIR="/dataset/outputs"
-ENV DATASET_DIR="/dataset/images"
-ENV LATENT_DIR="/dataset/latents"
-ENV ACCELERATE_CONFIG_FILE="/workspace/accelerate_config.yaml"
-ENV DEEPSPEED_CONFIG_FILE="/workspace/deepspeed_diffusion.json"
-ENV OMP_NUM_THREADS=16
-ENV MKL_NUM_THREADS=16
 
-# 8. Entrypoint to log in once and launch across 8 A100s
-ENTRYPOINT ["/bin/bash","-lc","\
-  set -e; \
-  echo 'Logging into HuggingFace…'; \
-  huggingface-cli login --token \"$HUGGINGFACE_TOKEN\"; \
-  echo 'Logging into W&B…'; \
-  wandb login \"$WANDB_TOKEN\"; \
-  echo 'Starting diffusion training…'; \
-  accelerate launch \
-    --config_file $ACCELERATE_CONFIG_FILE \
-    --dynamo_backend no \
-    --dynamo_mode default \
-    --mixed_precision bf16 \
-    --num_processes 8 \
-    --num_machines 1 \
-    --num_cpu_threads_per_process 4 \
-    -m /app/sd-scripts/${BASE_MODEL}_train_network.py \
-    --config_file ${CONFIG_DIR}/${JOB_ID}.toml \
-"]
+# — 8) Prepare dataset directories
+RUN mkdir -p /dataset/{configs,outputs,images} \
+ && chmod -R 777 /dataset
+
+# — 9) Permanent ENV tweaks for performance
+ENV CONFIG_DIR="/dataset/configs" \
+    OUTPUT_DIR="/dataset/outputs" \
+    DATASET_DIR="/dataset/images" \
+    NCCL_IB_DISABLE=0 \
+    NCCL_DEBUG=INFO \
+    NCCL_SOCKET_IFNAME=^docker0,lo \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    HF_DATASETS_USE_PREFETCH=1
+
+# — 10) Write an entrypoint that exports and then execs accelerate
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -e' \
+  '' \
+  '# (re‑export to ensure all children see them)' \
+  'export NCCL_IB_DISABLE=$NCCL_IB_DISABLE' \
+  'export NCCL_DEBUG=$NCCL_DEBUG' \
+  'export NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME' \
+  'export OMP_NUM_THREADS=$OMP_NUM_THREADS' \
+  'export MKL_NUM_THREADS=$MKL_NUM_THREADS' \
+  'export HF_DATASETS_USE_PREFETCH=$HF_DATASETS_USE_PREFETCH' \
+  '' \
+  'exec accelerate launch \' \
+  '  --num_processes 8 \' \
+  '  --num_machines 1 \' \
+  '  --mixed_precision bf16 \' \
+  '  --num_cpu_threads_per_process $(( $(nproc) / 8 )) \' \
+  '  /app/sd-scripts/${BASE_MODEL}_train_network.py \' \
+  '  --config_file ${CONFIG_DIR}/${JOB_ID}.toml' \
+  > /entrypoint.sh && chmod +x /entrypoint.sh
+
+# — 11) Use our script as PID 1
+ENTRYPOINT ["/entrypoint.sh"]

@@ -212,7 +212,8 @@ def start_tuning_container_diffusion(job: DiffusionJob):
             environment=docker_env,
             volumes=volume_bindings,
             runtime="nvidia",
-            device_requests=[docker.types.DeviceRequest(count=1, capabilities=[["gpu"]])],
+            shm_size="32g",
+            device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])],
             detach=True,
             tty=True,
         )

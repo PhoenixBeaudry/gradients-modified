@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir \
       optimum \
       flash-attn \
       unsloth \
-      trl \
+      trl==0.7.10 \
       protobuf
 
 # 4. Prepare working directories
@@ -49,6 +49,11 @@ ENV CONFIG_DIR="/workspace/axolotl/configs" \
 RUN mkdir -p /root/.aws && \
     printf "[default]\naws_access_key_id=dummy\naws_secret_access_key=dummy\n" > /root/.aws/credentials && \
     printf "[default]\nregion=us-east-1\n" > /root/.aws/config
+
+# from the root of your repo, so setup.py / pyproject.toml is present
+WORKDIR /workspace/axolotl
+# install your local code as a package
+RUN pip install --no-cache-dir .
 
 # 7. Entrypoint: login + accelerate launch
 ENTRYPOINT ["/bin/bash", "-lc", "\
