@@ -1,5 +1,5 @@
 # — 1) Base image
-FROM diagonalge/kohya_latest:latest
+FROM --platform=linux/amd64 diagonalge/kohya_latest:latest
 
 # — 2) Switch to root to install system deps
 USER root
@@ -53,10 +53,9 @@ RUN printf '%s\n' \
   'export HF_DATASETS_USE_PREFETCH=$HF_DATASETS_USE_PREFETCH' \
   '' \
   'exec accelerate launch \' \
-  '  --num_processes 8 \' \
+  '  --num_processes 1 \' \
   '  --num_machines 1 \' \
   '  --mixed_precision bf16 \' \
-  '  --num_cpu_threads_per_process $(( $(nproc) / 8 )) \' \
   '  /app/sd-scripts/${BASE_MODEL}_train_network.py \' \
   '  --config_file ${CONFIG_DIR}/${JOB_ID}.toml' \
   > /entrypoint.sh && chmod +x /entrypoint.sh
