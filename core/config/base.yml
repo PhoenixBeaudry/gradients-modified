@@ -1,6 +1,6 @@
 # core/config/base.yml
 
-base_model: NousResearch/Meta-Llama-3-8B-Instruct
+base_model: NousResearch/Llama-3.2-1B
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
 

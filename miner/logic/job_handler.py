@@ -407,3 +407,117 @@ def start_tuning_container(job: TextJob):
                 logger.info("Container removed")
             except Exception as e:
                 logger.warning(f"Failed to remove container: {e}")
+
+
+def start_tuning_container_test():
+    logger.info("=" * 80)
+    logger.info("STARTING THE TEST TUNING CONTAINER")
+    logger.info("=" * 80)
+
+    config_filename = f"testing.yml"
+    config_path = os.path.join(cst.CONFIG_DIR, config_filename)
+
+    job = {
+        'dataset': "teknium/GPT4-LLM-Cleaned",
+        'model': "NousResearch/Llama-3.2-1B",
+        'dataset_type': "alpaca",
+        'file_format': "hf",
+        'job_id': "testing",
+        'expected_repo_name': "testing1"
+    }
+
+    config = _load_and_modify_config(
+        job.dataset,
+        job.model,
+        job.dataset_type,
+        job.file_format,
+        job.job_id,
+        job.expected_repo_name,
+    )
+    save_config(config, config_path)
+
+    logger.info(config)
+
+    logger.info(os.path.basename(job.dataset) if job.file_format != FileFormat.HF else "")
+
+    docker_env = DockerEnvironment(
+        huggingface_token=cst.HUGGINGFACE_TOKEN,
+        wandb_token=cst.WANDB_TOKEN,
+        job_id=job.job_id,
+        dataset_type=cst.CUSTOM_DATASET_TYPE,
+        dataset_filename=os.path.basename(job.dataset) if job.file_format != FileFormat.HF else "",
+    ).to_dict()
+    logger.info(f"Docker environment: {docker_env}")
+
+    try:
+        docker_client = docker.from_env()
+
+        volume_bindings = {
+            os.path.abspath(cst.CONFIG_DIR): {
+                "bind": "/workspace/axolotl/configs",
+                "mode": "rw",
+            },
+            os.path.abspath(cst.OUTPUT_DIR): {
+                "bind": "/workspace/axolotl/outputs",
+                "mode": "rw",
+            },
+        }
+        volume_bindings[ os.path.expanduser("~/.cache/huggingface") ] = {
+            "bind": "/root/.cache/huggingface",
+            "mode": "rw"
+        }
+
+
+        if job.file_format != FileFormat.HF:
+            dataset_dir = os.path.dirname(os.path.abspath(job.dataset))
+            logger.info(dataset_dir)
+            volume_bindings[dataset_dir] = {
+                "bind": "/workspace/input_data",
+                "mode": "ro",
+            }
+
+        if isinstance(job.dataset_type, DPODatasetType):
+            if job.file_format == FileFormat.JSON:
+                _adapt_columns_for_dpo_dataset(job.dataset, job.dataset_type, True)
+
+
+        container = docker_client.containers.run(
+            image=cst.MINER_DOCKER_IMAGE,
+            environment=docker_env,
+            volumes=volume_bindings,
+            runtime="nvidia",
+            shm_size="32g",
+            device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])],
+            detach=True,
+            tty=True,
+        )
+
+        # Use the shared stream_logs function
+        stream_logs(container)
+
+        result = container.wait()
+
+        if result["StatusCode"] != 0:
+            raise DockerException(f"Container exited with non-zero status code: {result['StatusCode']}")
+
+    except Exception as e:
+        logger.error(f"Error processing job: {str(e)}")
+        raise
+
+    finally:
+        repo = config.get("hub_model_id", None)
+        if repo:
+            hf_api = HfApi(token=cst.HUGGINGFACE_TOKEN)
+            hf_api.update_repo_settings(repo_id=repo, private=False, token=cst.HUGGINGFACE_TOKEN)
+            logger.info(f"Successfully made repository {repo} public")
+
+        if "container" in locals():
+            try:
+                container.remove(force=True)
+                logger.info("Container removed")
+            except Exception as e:
+                logger.warning(f"Failed to remove container: {e}")
+
+
+if __name__ == "__main__":
+    start_tuning_container_test(None)
