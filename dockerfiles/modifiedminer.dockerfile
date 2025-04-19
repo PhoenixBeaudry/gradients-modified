@@ -2,7 +2,7 @@
 FROM axolotlai/axolotl:main-latest
 
 # 3. Install Python packages
-RUN pip install mlflow huggingface_hub wandb
+RUN pip install --no-build-isolation mlflow huggingface_hub wandb
 
 # 4. Prepare working directories
 WORKDIR /workspace/axolotl
@@ -29,9 +29,9 @@ RUN mkdir -p /root/.aws && \
 
 CMD ["/bin/bash", "-c", "\
 echo 'Preparing data...' && \
-pip install mlflow && \
-pip install protobuf && \
-pip install --upgrade huggingface_hub && \
+pip install --no-build-isolation mlflow && \
+pip install --no-build-isolation protobuf && \
+pip install --no-build-isolation --upgrade huggingface_hub && \
 if [ -n \"$HUGGINGFACE_TOKEN\" ]; then \
     echo 'Attempting to log in to Hugging Face' && \
     huggingface-cli login --token \"$HUGGINGFACE_TOKEN\" --add-to-git-credential; \
