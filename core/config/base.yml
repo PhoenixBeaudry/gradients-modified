@@ -91,3 +91,11 @@ fsdp_config:
   fsdp_offload_params: true
   fsdp_state_dict_type: FULL_STATE_DICT
   fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer
+
+plugins:
+  - axolotl.integrations.liger.LigerPlugin
+liger_rope: true
+liger_rms_norm: true
+liger_glu_activation: true
+liger_layer_norm: true
+liger_fused_linear_cross_entropy: true
