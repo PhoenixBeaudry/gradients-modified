@@ -1,5 +1,5 @@
 # — 1) Base image
-FROM --platform=linux/amd64 diagonalge/kohya_latest:latest
+FROM diagonalge/kohya_latest:latest
 
 # — 2) Switch to root to install system deps
 USER root
@@ -40,4 +40,4 @@ ENV CONFIG_DIR="/dataset/configs" \
     HF_DATASETS_USE_PREFETCH=1
 
 
-CMD accelerate launch --dynamo_backend no --dynamo_mode default --mixed_precision bf16 --num_processes 1 --num_machines 1 --num_cpu_threads_per_process 2 /app/sd-scripts/${BASE_MODEL}_train_network.py --config_file ${CONFIG_DIR}/${JOB_ID}.toml
+CMD accelerate launch --mixed_precision bf16 --multi_gpu --num_processes 8 --num_machines 1 --num_cpu_threads_per_process 4 /app/sd-scripts/${BASE_MODEL}_train_network.py --config_file ${CONFIG_DIR}/${JOB_ID}.toml
