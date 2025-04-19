@@ -1,5 +1,5 @@
 # 1. Base image with Python 3.11, CUDA 12.4, Axolotl 2.5.1
-FROM --platform=linux/amd64 axolotlai/axolotl:main-latest
+FROM axolotlai/axolotl:main-latest
 
 # 3. Install Python packages
 RUN pip install mlflow huggingface_hub wandb
@@ -49,5 +49,5 @@ if [ \"$DATASET_TYPE\" != \"hf\" ] && [ -d \"/workspace/input_data/\" ]; then \
     cp -r /workspace/input_data/* /workspace/axolotl/; \
 fi && \
 echo 'Starting training command' && \
-exec axolotl train /.yml \
+exec axolotl train ${CONFIG_DIR}/${JOB_ID}.yml \
 "]
