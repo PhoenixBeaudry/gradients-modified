@@ -64,7 +64,6 @@ logging_steps: 1
 # model = torch.compile(model)
 
 xformers_attention:
-flash_attention: true
 s2_attention:
 
 wandb_project: Gradients-On-Demand

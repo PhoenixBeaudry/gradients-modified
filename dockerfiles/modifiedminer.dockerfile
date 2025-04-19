@@ -1,5 +1,5 @@
 # 1. Base image with Python 3.11, CUDA 12.4, Axolotl 2.5.1
-FROM --platform=linux/amd64 axolotlai/axolotl:main-20250419-py3.11-cu124-2.6.0
+FROM --platform=linux/amd64 axolotlai/axolotl:main-latest
 
 # 2. System libs for optimized kernels
 RUN apt-get update && \
@@ -8,19 +8,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 3. Install Python packages (FlashAttention, DeepSpeed, etc.)
-RUN pip install --no-cache-dir --no-build-isolation\
-      axolotl[flash-attn,deepspeed] \
+RUN pip install --no-cache-dir --no-build-isolation \
       mlflow \
       huggingface_hub \
       wandb \
-      accelerate \
       deepspeed \
-      bitsandbytes \
-      fairscale \
-      xformers \
-      optimum \
-      flash-attn \
-      unsloth \
       protobuf \
       liger-kernel \
       triton
