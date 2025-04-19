@@ -39,26 +39,5 @@ ENV CONFIG_DIR="/dataset/configs" \
     MKL_NUM_THREADS=1 \
     HF_DATASETS_USE_PREFETCH=1
 
-# — 10) Write an entrypoint that exports and then execs accelerate
-RUN printf '%s\n' \
-  '#!/usr/bin/env bash' \
-  'set -e' \
-  '' \
-  '# (re‑export to ensure all children see them)' \
-  'export NCCL_IB_DISABLE=$NCCL_IB_DISABLE' \
-  'export NCCL_DEBUG=$NCCL_DEBUG' \
-  'export NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME' \
-  'export OMP_NUM_THREADS=$OMP_NUM_THREADS' \
-  'export MKL_NUM_THREADS=$MKL_NUM_THREADS' \
-  'export HF_DATASETS_USE_PREFETCH=$HF_DATASETS_USE_PREFETCH' \
-  '' \
-  'exec accelerate launch \' \
-  '  --num_processes 1 \' \
-  '  --num_machines 1 \' \
-  '  --mixed_precision bf16 \' \
-  '  /app/sd-scripts/${BASE_MODEL}_train_network.py \' \
-  '  --config_file ${CONFIG_DIR}/${JOB_ID}.toml' \
-  > /entrypoint.sh && chmod +x /entrypoint.sh
 
-# — 11) Use our script as PID 1
-ENTRYPOINT ["/entrypoint.sh"]
+CMD accelerate launch --dynamo_backend no --dynamo_mode default --mixed_precision bf16 --num_processes 1 --num_machines 1 --num_cpu_threads_per_process 2 /app/sd-scripts/${BASE_MODEL}_train_network.py --config_file ${CONFIG_DIR}/${JOB_ID}.toml

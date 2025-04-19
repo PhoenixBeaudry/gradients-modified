@@ -59,6 +59,7 @@ early_stopping_patience: 3
 
 logging_steps: 1
 
+
 # optional: in your training script, wrap your model
 # model = torch.compile(model)
 
@@ -82,6 +83,11 @@ eval_max_new_tokens: 128
 
 debug:
 
-deepspeed:
+deepspeed: /workspace/axolotl/configs/deepspeed_stage2.json
 fsdp:
+  - full_shard
+  - auto_wrap
 fsdp_config:
+  fsdp_offload_params: true
+  fsdp_state_dict_type: FULL_STATE_DICT
+  fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer

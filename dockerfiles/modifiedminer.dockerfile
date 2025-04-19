@@ -31,8 +31,6 @@ RUN mkdir -p \
       /workspace/axolotl/data \
       /workspace/input_data
 
-ENV ACCELERATE_CONFIG_FILE="/workspace/axolotl/configs/accelerate_config.yaml"
-
 # 5. Default ENVs (override these in your .env)
 ENV CONFIG_DIR="/workspace/axolotl/configs" \
     OUTPUT_DIR="/workspace/axolotl/outputs" \
@@ -69,7 +67,5 @@ ENTRYPOINT ["/bin/bash", "-lc", "\
   fi; \
   \
   echo 'Starting training…'; \
-  accelerate launch \
-    --config_file $ACCELERATE_CONFIG_FILE \
-    -m axolotl.cli.train ${CONFIG_DIR}/${JOB_ID}.yml \
+  axolotl train ${CONFIG_DIR}/${JOB_ID}.yml \
 "]
