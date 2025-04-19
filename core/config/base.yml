@@ -58,7 +58,6 @@ hub_repo:
 hub_strategy: checkpoint
 hub_token:
 
-
 saves_per_epoch: 4
 warmup_steps: 5
 evals_per_epoch: 4

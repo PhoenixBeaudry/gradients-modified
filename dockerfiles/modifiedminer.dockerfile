@@ -27,27 +27,25 @@ RUN mkdir -p /root/.aws && \
     echo "[default]\naws_access_key_id=dummy_access_key\naws_secret_access_key=dummy_secret_key" > /root/.aws/credentials && \
     echo "[default]\nregion=us-east-1" > /root/.aws/config
 
-CMD ["/bin/bash", "-c", "\
-echo 'Preparing data...' && \
-pip install --no-build-isolation mlflow && \
-pip install --no-build-isolation protobuf && \
-pip install --no-build-isolation --upgrade huggingface_hub && \
-if [ -n \"$HUGGINGFACE_TOKEN\" ]; then \
-    echo 'Attempting to log in to Hugging Face' && \
-    huggingface-cli login --token \"$HUGGINGFACE_TOKEN\" --add-to-git-credential; \
-else \
-    echo 'HUGGINGFACE_TOKEN is not set. Skipping Hugging Face login.'; \
-fi && \
-if [ -n \"$WANDB_TOKEN\" ]; then \
-    echo 'Attempting to log in to W&B' && \
-    wandb login \"$WANDB_TOKEN\"; \
-else \
-    echo 'WANDB_TOKEN is not set. Skipping W&B login.'; \
-fi && \
-if [ \"$DATASET_TYPE\" != \"hf\" ] && [ -d \"/workspace/input_data/\" ]; then \
-    cp -r /workspace/input_data/* /workspace/axolotl/data/; \
-    cp -r /workspace/input_data/* /workspace/axolotl/; \
-fi && \
-echo 'Starting training command' && \
-exec axolotl train ${CONFIG_DIR}/${JOB_ID}.yml \
-"]
+    CMD echo 'Preparing data...' && \
+    pip install --no-build-isolation mlflow && \
+    pip install --no-build-isolation protobuf && \
+    pip install --no-build-isolation --upgrade huggingface_hub && \
+    if [ -n "$HUGGINGFACE_TOKEN" ]; then \
+    echo "Attempting to log in to Hugging Face" && \
+    huggingface-cli login --token "$HUGGINGFACE_TOKEN" --add-to-git-credential; \
+    else \
+    echo "HUGGINGFACE_TOKEN is not set. Skipping Hugging Face login."; \
+    fi && \
+    if [ -n "$WANDB_TOKEN" ]; then \
+    echo "Attempting to log in to W&B" && \
+    wandb login "$WANDB_TOKEN"; \
+    else \
+    echo "WANDB_TOKEN is not set. Skipping W&B login."; \
+    fi && \
+    if [ "$DATASET_TYPE" != "hf" ] && [ -f "/workspace/input_data/${DATASET_FILENAME}" ]; then \
+    cp /workspace/input_data/${DATASET_FILENAME} /workspace/axolotl/data/${DATASET_FILENAME}; \
+    cp /workspace/input_data/${DATASET_FILENAME} /workspace/axolotl/${DATASET_FILENAME}; \
+    fi && \
+    echo 'Starting training command' && \
+    axolotl train ${CONFIG_DIR}/${JOB_ID}.yml
