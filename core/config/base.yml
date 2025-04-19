@@ -83,13 +83,6 @@ eval_max_new_tokens: 128
 debug:
 
 deepspeed: /workspace/axolotl/configs/deepspeed_stage2.json
-fsdp:
-  - full_shard
-  - auto_wrap
-fsdp_config:
-  fsdp_offload_params: true
-  fsdp_state_dict_type: FULL_STATE_DICT
-  fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer
 
 plugins:
   - axolotl.integrations.liger.LigerPlugin
