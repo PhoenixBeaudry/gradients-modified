@@ -1,6 +1,4 @@
-# core/config/base.yml
-
-base_model: NousResearch/Llama-3.2-1B
+base_model: NousResearch/Meta-Llama-3-8B-Instruct
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
 
@@ -14,6 +12,11 @@ dataset_prepared_path:
 val_set_size: 0.05
 output_dir: miner_id_24
 
+sequence_len: 512
+sample_packing: false
+pad_to_sequence_len: true
+trust_remote_code: true
+
 adapter: lora
 lora_model_dir:
 lora_r: 8
@@ -22,48 +25,26 @@ lora_dropout: 0.05
 lora_target_linear: true
 lora_fan_in_fan_out:
 
-sequence_len: 512
-sample_packing: true
-pad_to_sequence_len: false
-group_by_length: true
-
-gradient_accumulation_steps: 8
+gradient_accumulation_steps: 4
 micro_batch_size: 2
-num_epochs: 3
-optimizer: lion
-beta1: 0.9
-beta2: 0.999
-eps: 1e-8
-gradient_clip_val: 1.0
+num_epochs: 1
+optimizer: adamw_bnb_8bit
+lr_scheduler: cosine
+learning_rate: 0.0002
 
-lr_scheduler: onecycle
-warmup_ratio: 0.03
-pct_start: 0.1
-learning_rate: 2e-4
-max_steps: 4000
+train_on_inputs: false
+group_by_length: false
+bf16: auto
+fp16:
+tf32: false
 
-bf16: true
-fp16: false
-tf32: true
-gradient_checkpointing: true
-
-evaluation_strategy: "steps"
-eval_steps: 500
-save_strategy: "steps"
-save_steps: 500
-save_total_limit: 3
-load_best_model_at_end: true
-metric_for_best_model: "eval_loss"
-greater_is_better: false
-early_stopping_patience: 3
-
+gradient_checkpointing: false
+early_stopping_patience:
+resume_from_checkpoint:
+local_rank:
 logging_steps: 1
-
-
-# optional: in your training script, wrap your model
-# model = torch.compile(model)
-
 xformers_attention:
+flash_attention: true
 s2_attention:
 
 wandb_project: Gradients-On-Demand
@@ -77,12 +58,19 @@ hub_repo:
 hub_strategy: checkpoint
 hub_token:
 
+
+saves_per_epoch: 4
+warmup_steps: 10
+evals_per_epoch: 4
 eval_table_size:
 eval_max_new_tokens: 128
-
+max_steps: 10
 debug:
 
-deepspeed: /workspace/axolotl/configs/deepspeed_stage2.json
+deepspeed: /workspace/axolotl/configs/deepspeed_stage1.json
+weight_decay: 0.0
+fsdp:
+fsdp_config:
 
 plugins:
   - axolotl.integrations.liger.LigerPlugin
