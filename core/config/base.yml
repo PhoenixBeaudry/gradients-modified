@@ -71,7 +71,7 @@ max_grad_norm: 1.0
 
 debug:
 
-deepspeed: /workspace/axolotl/configs/deepspeed_stage1.json
+deepspeed: /workspace/axolotl/configs/deepspeed_stage2.json
 weight_decay: 0.01
 fsdp:
 fsdp_config:
