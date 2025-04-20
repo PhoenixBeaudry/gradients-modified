@@ -1,5 +1,5 @@
 # 1. Base image with Python 3.11, CUDA 12.4, Axolotl 2.5.1
-FROM axolotlai/axolotl:main-latest
+FROM axolotlai/axolotl:main-20241128-py3.11-cu124-2.5.1
 
 # 3. Install Python packages
 RUN pip install --no-build-isolation mlflow huggingface_hub wandb
